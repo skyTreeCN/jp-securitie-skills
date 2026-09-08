@@ -1,99 +1,101 @@
-# 日本証券基幹システム 全体ランドスケープ
+# 日本証券基幹システム 全体ランドスケープ v0.2
 
-## 1. 全体像
+## 1. 分類
+
+本図はサブシステムのみを描く。現物/信用等の取引種別、株式/債券/投信等の商品は別軸とする。
+
+## 2. 全体像
 
 ```mermaid
 flowchart LR
-  CUST[顧客/営業店/ネット/アプリ]
-  INTM[銀行/IFA/仲介]
-  MKT[取引所/PTS]
-  CLR[JSCC等 清算]
-  JAS[JASDEC 保振]
-  BANK[銀行]
-  ISS[発行体/信託銀行]
-  TAX[国税庁/税務署]
-  REG[金融庁/SESC/日証協]
-  CUS[海外カストディ/SWIFT]
+  CUST[顧客 / 営業店 / ネット / アプリ]
+  MKT[取引所 / PTS]
+  CLR[JSCC等 清算機関]
+  JAS[JASDEC]
+  BANK[銀行 / 日銀関連]
+  ISS[発行体 / 信託銀行]
+  TAX[国税庁 / 税務署]
+  REG[金融庁 / SESC / 日証協]
+  CUS[海外カストディ / SWIFT]
+  INFO[情報ベンダー]
 
-  subgraph CORE[証券基幹 参照モデル]
-    CA[S01-S03 顧客・口座・契約]
-    MST[S04-S05 銘柄/市場/営業日]
-    TRD[S06-S12 注文・商品取引]
-    AST[S13-S18 金銭/残高/受渡/権利/手数料]
-    TX[S19-S21 税/NISA/配当利金税]
-    FOR[S22-S24 外証/外貨/外国決済]
-    CTL[S25-S29 担保/分別/コンプラ/会計/照合]
-    OUT[S30-S32 対客帳票/法定報告/情報系]
-    HUB[S33 外部接続]
-    BAT[S34 バッチ/締め]
-    AGT[S35 仲介]
+  subgraph CORE[業務サブシステム]
+    A[SS01-SS04\n顧客・口座・契約・営業]
+    B[SS05-SS08\n銘柄・市場・レート・制度パラメータ]
+    C[SS09-SS15\n注文約定・余力・建玉・担保・手数料・与信]
+    D[SS16-SS20\n顧客勘定・資金・証券残高・移管・評価]
+    E[SS21-SS24\n清算・決済・保振口座・照合例外]
+    F[SS25-SS28\n権利・譲渡益税・配当利金税・NISA]
+    G[SS29-SS30\n外証・外貨為替]
+    H[SS31-SS39\n会計・帳票・報告・コンプラ・AML・分別・情報・事務・資金繰り]
   end
 
-  CUST --> CA
-  CUST --> TRD
-  INTM --> AGT --> CA
-  AGT --> TRD
-  CA --> TRD
-  MST --> TRD
-  TRD --> AST
-  TRD --> CTL
-  AST --> TX
-  AST --> CTL
-  TX --> OUT
-  AST --> OUT
-  CTL --> OUT
-  FOR --> AST
-  FOR --> TX
-  BAT --> TRD
-  BAT --> AST
-  BAT --> TX
-  BAT --> OUT
+  subgraph COMMON[共通系サブシステム]
+    X[CS01 外部接続]
+    Y[CS02 業務日付・バッチ]
+    Z[CS03-CS06\n権限・監査・運用再処理・データ連携]
+  end
 
-  TRD <--> HUB <--> MKT
-  AST <--> HUB <--> CLR
-  AST <--> HUB <--> JAS
-  AST <--> HUB <--> BANK
-  AST <--> HUB <--> ISS
-  FOR <--> HUB <--> CUS
-  OUT <--> HUB <--> TAX
-  OUT <--> HUB <--> REG
+  CUST --> A --> C --> D --> E
+  B --> C
+  B --> D
+  E --> F
+  D --> F
+  G --> D
+  G --> E
+  F --> H
+  D --> H
+  E --> H
+
+  Y --> C
+  Y --> D
+  Y --> E
+  Y --> F
+  Z --> CORE
+
+  C <--> X <--> MKT
+  E <--> X <--> CLR
+  E <--> X <--> JAS
+  D <--> X <--> BANK
+  F <--> X <--> ISS
+  G <--> X <--> CUS
+  H <--> X <--> TAX
+  H <--> X <--> REG
+  B <--> X <--> INFO
 ```
 
-## 2. 中核Business Flow
+## 3. 取引種別・商品との交差
 
 ```mermaid
-sequenceDiagram
-  participant C as 顧客
-  participant O as 注文約定
-  participant P as 余力
-  participant M as 市場
-  participant S as 清算受渡
-  participant B as 残高/金銭
-  participant T as 税
-  participant A as 会計
-  participant R as 帳票
+flowchart TB
+  T[取引種別\n現物 / 信用 / 募集売出 / 先物 / オプション 等]
+  P[商品\n株式 / 債券 / 投信 / ETF / 外国証券 等]
+  S[サブシステム\nSS01-SS39]
 
-  C->>O: 注文
-  O->>P: 余力/売却可能数量照会
-  P-->>O: 可否・拘束額
-  O->>M: 発注
-  M-->>O: 約定
-  O->>S: 約定情報
-  O->>B: 約定反映/拘束更新
-  S->>B: 受渡反映
-  B->>T: 譲渡/取得/配当/権利イベント
-  T->>B: 税徴収/還付
-  B->>A: 金銭・証券イベント
-  T->>A: 税仕訳イベント
-  O->>R: 取引報告データ
-  B->>R: 残高/金銭データ
-  T->>R: 税/年間取引データ
+  T --> R[業務要件]
+  P --> R
+  S --> R
 ```
 
-## 3. 設計原則
+例: `信用取引 × 国内株式`は、SS09注文約定、SS10余力、SS12建玉、SS13担保保証金、SS16顧客勘定、SS18証券残高、SS21清算、SS22決済、SS25権利、SS26譲渡益税、SS31会計、SS32帳票等を横断する。
 
-- 業務イベントをサブシステム間の契約とする。
-- 税、会計、帳票は注文画面の派生機能ではなく、独立した業務責務として扱う。
-- 権利処理は残高・税・会計・帳票へ横断影響する。
-- 外部接続は通信だけでなく、業務ACK/NACK、再送、重複、締切を持つ。
-- 年次帳票は日次取引の単純合計ではなく、年度中の訂正/取消/移管/損益通算/税還付を反映する。
+## 4. 主な対外関係
+
+| 外部主体 | 主に関係するサブシステム |
+|---|---|
+| 取引所/PTS | SS09, SS34, CS01 |
+| JSCC等清算機関 | SS21, SS22, SS24, SS39, CS01 |
+| JASDEC | SS18, SS19, SS22, SS23, SS24, SS25, CS01 |
+| 銀行 | SS17, SS22, SS30, SS39, CS01 |
+| 発行体/信託銀行 | SS25, SS27, SS32, CS01 |
+| 国税庁/税務署 | SS26, SS27, SS28, SS33, CS01 |
+| 金融庁/SESC/日証協 | SS33, SS34, SS35, SS36, CS01 |
+| 海外カストディ/SWIFT | SS29, SS30, SS22, SS24, CS01 |
+| 情報ベンダー | SS05, SS06, SS07, SS25, CS01 |
+
+## 5. 公開根拠
+
+- NRI THE STAR: https://www.nri.com/jp/service/solution/the_star.html
+- NRI I-STAR/CORE: https://www.nri.com/jp/service/solution/i_star_core.html
+- NRI I-STAR/GV: https://www.nri.com/jp/service/solution/i_star_gv.html
+- JASDEC: https://www.jasdec.com/rule/
