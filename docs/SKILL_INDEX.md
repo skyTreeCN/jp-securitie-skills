@@ -1,55 +1,36 @@
-# Skill Index v0.2
+# Skill Index
 
-## 業務サブシステム
+**Status:** Architecture Gate前 / 詳細Skill展開停止中  
+**as-of:** 2026-09-08
 
-- [SS01 顧客属性管理](../skills/subsystems/SS01-customer-attributes/SKILL.md)
-- [SS02 口座管理](../skills/subsystems/SS02-account-management/SKILL.md)
-- [SS03 契約・サービス管理](../skills/subsystems/SS03-contracts-services/SKILL.md)
-- [SS04 営業組織・担当者・チャネル管理](../skills/subsystems/SS04-sales-channel/SKILL.md)
-- [SS05 銘柄管理](../skills/subsystems/SS05-security-master/SKILL.md)
-- [SS06 市場・営業日管理](../skills/subsystems/SS06-market-calendar/SKILL.md)
-- [SS07 時価・為替レート・基準価額管理](../skills/subsystems/SS07-market-data-rates/SKILL.md)
-- [SS08 制度・料率・業務パラメータ管理](../skills/subsystems/SS08-business-parameters/SKILL.md)
-- [SS09 注文・約定管理](../skills/subsystems/SS09-order-execution/SKILL.md)
-- [SS10 余力管理](../skills/subsystems/SS10-buying-power/SKILL.md)
-- [SS11 募集・売出・配分管理](../skills/subsystems/SS11-offering-allocation/SKILL.md)
-- [SS12 建玉管理](../skills/subsystems/SS12-open-positions/SKILL.md)
-- [SS13 担保・保証金管理](../skills/subsystems/SS13-collateral-margin/SKILL.md)
-- [SS14 手数料・諸経費管理](../skills/subsystems/SS14-fees-expenses/SKILL.md)
-- [SS15 与信・取引リスク管理](../skills/subsystems/SS15-credit-risk/SKILL.md)
-- [SS16 顧客勘定管理](../skills/subsystems/SS16-customer-ledger/SKILL.md)
-- [SS17 資金残高・入出金管理](../skills/subsystems/SS17-cash-balance-payment/SKILL.md)
-- [SS18 証券預り・残高管理](../skills/subsystems/SS18-securities-balance/SKILL.md)
-- [SS19 入出庫・移管管理](../skills/subsystems/SS19-securities-transfer/SKILL.md)
-- [SS20 評価・損益管理](../skills/subsystems/SS20-valuation-pnl/SKILL.md)
-- [SS21 清算管理](../skills/subsystems/SS21-clearing/SKILL.md)
-- [SS22 受渡・決済管理](../skills/subsystems/SS22-settlement/SKILL.md)
-- [SS23 保振加入者情報・振替口座管理](../skills/subsystems/SS23-jasdec-account/SKILL.md)
-- [SS24 照合・例外・フェイル管理](../skills/subsystems/SS24-reconciliation-exception/SKILL.md)
-- [SS25 権利管理](../skills/subsystems/SS25-corporate-actions/SKILL.md)
-- [SS26 譲渡益税・特定口座](../skills/subsystems/SS26-capital-gains-tax/SKILL.md)
-- [SS27 配当・利金税](../skills/subsystems/SS27-income-tax/SKILL.md)
-- [SS28 NISA・非課税口座](../skills/subsystems/SS28-nisa/SKILL.md)
-- [SS29 外国証券業務管理（外証）](../skills/subsystems/SS29-foreign-securities/SKILL.md)
-- [SS30 外貨・為替管理](../skills/subsystems/SS30-foreign-currency-fx/SKILL.md)
-- [SS31 会計](../skills/subsystems/SS31-accounting/SKILL.md)
-- [SS32 対客帳票・電子交付](../skills/subsystems/SS32-customer-reports/SKILL.md)
-- [SS33 法定帳簿・当局/税務報告](../skills/subsystems/SS33-statutory-regulatory-reporting/SKILL.md)
-- [SS34 コンプライアンス・売買審査](../skills/subsystems/SS34-compliance-surveillance/SKILL.md)
-- [SS35 AML・経済制裁](../skills/subsystems/SS35-aml-sanctions/SKILL.md)
-- [SS36 顧客資産分別管理](../skills/subsystems/SS36-asset-segregation/SKILL.md)
-- [SS37 情報系・営業日報・経営情報](../skills/subsystems/SS37-management-information/SKILL.md)
-- [SS38 事務ワークフロー・承認](../skills/subsystems/SS38-operations-workflow/SKILL.md)
-- [SS39 資金繰り・決済資金管理](../skills/subsystems/SS39-treasury-liquidity/SKILL.md)
+現在は総体設計 v0.4 の確定を優先し、個別サブシステムSkillの詳細化を停止している。
 
-## 共通系サブシステム
+## Authority
 
-- [CS01 外部接続](../skills/common/CS01-external-connectivity/SKILL.md)
-- [CS02 業務日付・バッチ統制](../skills/common/CS02-business-day-batch/SKILL.md)
-- [CS03 認証・権限管理](../skills/common/CS03-identity-access/SKILL.md)
-- [CS04 監査証跡・操作履歴](../skills/common/CS04-audit-trail/SKILL.md)
-- [CS05 運用監視・リカバリ・再処理](../skills/common/CS05-operations-recovery/SKILL.md)
-- [CS06 データ連携・配信](../skills/common/CS06-data-integration/SKILL.md)
+サブシステム一覧・名称・責務は以下をAuthorityとする。
+
+- `docs/01-architecture/SUBSYSTEM_CATALOG.md`
+- `docs/01-architecture/OVERALL_DESIGN.md`
+- `docs/01-architecture/SUBSYSTEM_RELATION_MAP.md`
+- `docs/01-architecture/DATA_AUTHORITY_MAP.md`
+
+## 現在のSkillディレクトリ
+
+```text
+skills/
+  subsystems/   # SS01-SS39 のv0.3時点Skeleton。Architecture Freezeまでは参考扱い
+  common/       # CS01-CS06 Skeleton
+```
+
+v0.4 Gap Reviewで追加した `SS40`, `SS41`, `SS42` のSkill Skeletonは、Architecture v1.0 Freeze後に一括生成する。
+
+## 重要
+
+- `skills/subsystems/` の既存Skeletonより `SUBSYSTEM_CATALOG.md` を優先する。
+- 現在の正式論理モデルは **SS01-SS42 + CS01-CS06**。
+- `SS24` の正式責務はv0.4で「残高・資金照合／例外・Fail管理」へ変更済み。
+- 信用取引/現物取引はTransaction、株式/債券/投信はProductであり、サブシステム名にしない。
+- Architecture Gate通過後、このIndexを正式な48サブシステムSkill Indexへ再生成する。
 
 ## 別軸
 
