@@ -1,69 +1,135 @@
 # Project Status
 
-**Version:** Architecture v0.4  
-**Date:** 2026-09-08
+**Version:** Architecture v1.0  
+**Date:** 2026-09-08  
+**Status:** FROZEN
 
 ## 当前阶段
 
-**Phase 0 — 总体设计 / Architecture Freeze准备**
+**Phase 0 — 总体设计：完成**
 
-在总体设计通过Architecture Gate前，继续暂停扩写单个子系统的详细Skill。现有SS26譲渡益税详细资料仅作为既有资产/结构样板保留。
+Architecture Gate通过。总体设计已Freeze，可以进入Phase 1子系统Skill详细化。
 
-## 已完成
+## Architecture v1.0 Baseline
 
-- 3轴分类: サブシステム / 取引種別 / 商品
-- v0.3 Architecture Gap Review完成
 - 业务子系统: **SS01-SS42（42）**
 - 共通子系统: **CS01-CS06（6）**
 - 合计逻辑子系统: **48**
-- 取引種別: TR01-TR11
-- 商品: PR01-PR11
-- 新增 SS40 約定照合・決済照合管理
-- 新增 SS41 取引先・決済条件（SSI）管理
-- 新增 SS42 交付書面・目論見書・同意管理
-- SS24责任收缩为残高/资金Reconciliation・Exception・Settlement Fail
-- `OVERALL_DESIGN.md` v0.4
-- `SYSTEM_LANDSCAPE.md` v0.4
-- `SUBSYSTEM_RELATION_MAP.md` v0.4
-- `EXTERNAL_RELATION_MAP.md` v0.4
-- `DATA_AUTHORITY_MAP.md` v0.4
-- `END_TO_END_FLOW.md` E2E-01〜14
-- `COVERAGE_MATRIX.md` v0.4
-- `SCOPE_TIER_MODEL.md` Core / Conditional / Adjacent
+- 取引種別: **TR01-TR11（11）**
+- 商品: **PR01-PR11（11）**
+- 基本Requirement模型: `Subsystem × Transaction × Product`
+
+正式Freeze记录:
+
+- `docs/01-architecture/ARCHITECTURE_BASELINE_V1_0.md`
+
+## Phase 0完成内容
+
+- 子系统 / 交易 / 商品3轴完全分离
+- 第一轮Architecture Gap Review
+- 第二轮Subsystem Boundary Review
+- Tier B Conditional E2E Validation
+- Scope Tier Freeze
+- Internal Relation Map
+- External Relation Map
+- Data Authority Map
+- E2E-01〜14代表业务流
+- 信用/先物/Option/贷借/外证/募集/机构Matching追加验证
+- JPX/PTS、JSCC、JASDEC、银行/日银、日本证券金融、税务、监管、J-IRISS、海外Custody等外部Coverage
 - INPUT/OUTPUT/帐票标准
 - 出典/变更管理标准
 
-## Gap Review的主要发现
+## Architecture Review主要修正
 
-1. 原SS24把“约定/决济Matching”和“残高/资金Reconciliation/Fail”混在一起，需要拆分。
-2. 缺少Counterparty、Settlement Bank、Custody Account、SSI等决济Reference Authority。
-3. 缺少契约締结前交付书面、目论见书、说明书、确认书、电子交付同意及Version/交付证迹的Authority。
-4. 现物/信用继续保持为Transaction轴，不新增为子系统。
-5. 股票/债券/投信继续保持为Product轴，不新增为子系统。
-6. 贷借/Repo作为TR08跨既存子系统实现，不作为一级子系统。
-7. 最良执行/SOR由SS09执行、SS34规则监控、SS42客户说明/交付共同承担。
+1. 原SS24把Matching与Reconciliation混在一起 → 分离SS40。
+2. Counterparty / Settlement Account / SSI Authority缺失 → 新增SS41。
+3. 取引前书面/目论见书/Consent Authority缺失 → 新增SS42。
+4. SS24正式限定为残高/资金Reconciliation・Exception・Settlement Fail。
+5. 现物/信用保持Transaction轴。
+6. 股票/债券/投信保持Product轴。
+7. 贷借/Repo保持TR08，跨既存SS实现。
+8. 最良执行/SOR: SS09执行、SS34规则监控、SS42客户文书。
+9. J-IRISS: 外部System；SS01/SS34 + CS01/CS02对应。
+10. e-Tax: 外部Endpoint；SS33 + CS01对应。
+
+## Scope Freeze
+
+### Tier A Core
+34业务SS + 6共通SS。
+
+THE STAR级日本リテール总合证券Back-office的基本责任。
+
+### Tier B Conditional Core
+8业务SS:
+- SS11 募集・売出・配分
+- SS12 建玉
+- SS13 担保・保証金
+- SS15 与信・取引Risk
+- SS29 外国証券
+- SS30 外貨・為替
+- SS39 資金繰り
+- SS40 約定/決済照合
+
+### Tier C Adjacent
+- 全社GL/连结合计
+- 自己资本规制/Enterprise Risk
+- CRM/营业提案
+- Web/App/营业店Front
+- Investment Banking
+- Wrap/投资一任
+- 全社Document Archive
+- 人事/給与
 
 ## 总体设计Authority
 
-1. `docs/01-architecture/OVERALL_DESIGN.md`
-2. `docs/01-architecture/SYSTEM_LANDSCAPE.md`
-3. `docs/01-architecture/CLASSIFICATION_MODEL.md`
-4. `docs/01-architecture/SUBSYSTEM_CATALOG.md`
-5. `docs/01-architecture/SUBSYSTEM_RELATION_MAP.md`
-6. `docs/01-architecture/EXTERNAL_RELATION_MAP.md`
-7. `docs/01-architecture/DATA_AUTHORITY_MAP.md`
-8. `docs/01-architecture/END_TO_END_FLOW.md`
-9. `docs/01-architecture/SCOPE_TIER_MODEL.md`
-10. `docs/01-architecture/ARCHITECTURE_GAP_REVIEW_V0_3.md`
-11. `docs/01-architecture/TRANSACTION_CATALOG.md`
-12. `docs/01-architecture/PRODUCT_CATALOG.md`
-13. `docs/01-architecture/COVERAGE_MATRIX.md`
+1. `ARCHITECTURE_BASELINE_V1_0.md`
+2. `CLASSIFICATION_MODEL.md`
+3. `SUBSYSTEM_CATALOG.md`
+4. `SYSTEM_LANDSCAPE.md`
+5. `OVERALL_DESIGN.md`
+6. `SUBSYSTEM_RELATION_MAP.md`
+7. `DATA_AUTHORITY_MAP.md`
+8. `EXTERNAL_RELATION_MAP.md`
+9. `END_TO_END_FLOW.md`
+10. `SCOPE_TIER_MODEL.md`
+11. `TRANSACTION_CATALOG.md`
+12. `PRODUCT_CATALOG.md`
+13. `COVERAGE_MATRIX.md`
+14. `BOUNDARY_REVIEW_V0_4.md`
+15. `CONDITIONAL_E2E_VALIDATION.md`
+16. `ARCHITECTURE_REVIEW_CHECKLIST.md`
 
-## Architecture Freeze前剩余工作
+## 下一阶段 — Phase 1
 
-1. 对42+6个子系统做第二轮Boundary Review：重点查“应该合并/继续拆分”的系统。
-2. Core(Tier A)的所有End-to-End业务必须闭环，无Authority空洞。
-3. Conditional(Tier B)分别验证信用、募集、外国证券、Derivative、机构投资家业务。
-4. 检查日本特有基础设施是否完整：JPX/PTS、JSCC、JASDEC、银行/日银、日本证券金融、税务、监管、投信相关。
-5. 冻结系统名称/ID，发布Architecture v1.0。
-6. v1.0后才开始Phase 1子系统Skill详细化。
+从**国内股票现物交易**作为基准Scenario开始详细化子系统。
+
+第一批优先Skill:
+
+1. SS01 顾客属性
+2. SS02 口座
+3. SS03 契约・Service
+4. SS05 铭柄
+5. SS06 市场・营业日
+6. SS08 制度・Parameter
+7. SS42 交付书面・目论见书・同意
+8. SS34 Compliance・买卖审查
+9. SS09 注文・约定
+10. SS10 余力
+11. SS14 手续费
+12. SS16 顾客勘定
+13. SS17 资金残高・入出金
+14. SS18 证券预り・残高
+15. SS21 清算
+16. SS22 受渡・决济
+17. SS23 保振
+18. SS24 Reconciliation/Fail
+19. SS25 权利
+20. SS26 让渡益税
+21. SS27 配当・利金税
+22. SS28 NISA
+23. SS31 会计
+24. SS32 对客帐票
+25. SS33 法定帐簿/报告
+26. CS01/CS02
+
+每个Skill必须包含业务Know-how、Rule、State、计算、I/O、系统关系、外部关系、Batch/Cutoff、帐票Layout、异常/订正、测试观念和一次出典。
