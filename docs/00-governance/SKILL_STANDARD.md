@@ -1,18 +1,34 @@
-# Skill 記述標準
+# Skill 記述標準 v0.2
 
-各サブシステムは原則として次の構造で管理する。
+## 1. 分類
+
+Skillはサブシステム単位で管理する。
 
 ```text
-skills/Sxx-<slug>/
+skills/
+  subsystems/SSxx-<slug>/   # 業務サブシステム
+  common/CSxx-<slug>/       # 共通系サブシステム
+```
+
+取引種別（TRxx）と商品（PRxx）はSkillディレクトリ階層には混在させず、各サブシステムSkill内で適用Coverageとして参照する。
+
+基本式: `サブシステム × 取引種別 × 商品`
+
+## 2. 各Skillの標準構造
+
+```text
+SSxx-<slug>/
   SKILL.md
   business-rules.md
   input-output.md
   interfaces.md
+  transactions.md
+  products.md
   reports/
   sources.md
 ```
 
-## SKILL.md 必須章
+## 3. SKILL.md 必須章
 
 1. Positioning / 責務
 2. Scope / 対象
@@ -25,16 +41,18 @@ skills/Sxx-<slug>/
 9. OUTPUT
 10. Internal Interfaces / 対内関係
 11. External Interfaces / 対外関係
-12. Reports / 帳票
-13. Exceptions / 例外
-14. Batch & Timing / タイミング
-15. Accounting / 会計影響
-16. Tax / 税影響
-17. Test Viewpoints / テスト観点
-18. Sources / 出典
-19. Open Questions / 未確定
+12. Transaction Coverage / 取引種別Coverage
+13. Product Coverage / 商品Coverage
+14. Reports / 帳票
+15. Exceptions / 例外
+16. Batch & Timing / タイミング
+17. Accounting / 会計影響
+18. Tax / 税影響
+19. Test Viewpoints / テスト観点
+20. Sources / 出典
+21. Open Questions / 未確定
 
-## Mermaid
+## 4. Mermaid
 
 状態遷移、データ流、サブシステム関係は Markdown 内に Mermaid で記載する。
 
@@ -44,7 +62,7 @@ flowchart LR
   B --> C[OUTPUT]
 ```
 
-## 成熟度
+## 5. 成熟度
 
 - `L0 Skeleton`: 役割と境界のみ
 - `L1 Overview`: 主要業務・I/O・関係
