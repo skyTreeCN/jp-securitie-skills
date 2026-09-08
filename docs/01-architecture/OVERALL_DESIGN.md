@@ -1,6 +1,6 @@
-# 日本証券基幹システム 総体設計 v0.3
+# 日本証券基幹システム 総体設計 v0.4
 
-**Status:** Draft for Architecture Review  
+**Status:** Draft for Architecture Freeze  
 **as-of:** 2026-09-08  
 **Benchmark:** NRI THE STAR クラスの日本証券会社向け基幹/バックオフィス機能を想定した独自参照モデル
 
@@ -10,7 +10,7 @@
 
 ## 1. 設計目的
 
-本プロジェクトでは、個別業務を先に書き始めるのではなく、まず日本の総合証券会社の基幹システムを一つ設計するとした場合の**全体構造**を確定する。
+個別業務を先に書き始めず、日本の総合証券会社の基幹システムを一つ設計するとした場合の**全体構造**を先に確定する。
 
 総体設計で確定するもの:
 
@@ -22,6 +22,7 @@
 6. 業務データのAuthority（正本）
 7. 代表的なEnd-to-End業務フロー
 8. 共通基盤の責務
+9. Core / Conditional / Adjacent のScope
 
 総体設計確定後に、各サブシステムを `L2/L3` の詳細Skillへ展開する。
 
@@ -41,9 +42,7 @@ flowchart LR
   PR --> REQ
 ```
 
-例:
-
-`SS09 注文・約定管理 × TR02 信用取引 × PR01 国内株式`
+例: `SS09 注文・約定管理 × TR02 信用取引 × PR01 国内株式`
 
 この3軸を混在させない。
 
@@ -55,16 +54,20 @@ flowchart LR
 
 - 顧客・口座・契約
 - 基準情報/マスター
+- 取引先/決済条件/SSI
 - 注文・約定等の取引処理
 - 余力/建玉/担保/与信
 - 顧客勘定/金銭/証券残高
-- 清算/受渡/保振/照合
+- 清算/受渡/保振
+- 約定照合/決済照合
+- 残高/資金Reconciliation/Fail
 - 権利/税務/NISA
 - 外国証券/外貨
 - 会計/帳票/法定報告
+- 契約締結前等の交付書面/目論見書/同意
 - コンプライアンス/AML/分別管理
 - 情報系/事務Workflow/資金繰り
-- 外部接続/バッチ/権限/監査/運用/データ連携
+- 外部接続/Batch/権限/監査/運用/Data連携
 
 ### 3.2 原則として外側に置くもの
 
@@ -77,11 +80,14 @@ flowchart LR
 - 発行体/株主名簿管理人/信託銀行
 - 国税庁/税務署
 - 金融庁/SESC/日証協
-- 情報ベンダー
-- 海外市場/グローバルカストディ/SWIFT
-- 全社人事/給与等の非証券基幹システム
+- 情報Vendor
+- 海外市場/Global Custodian/SWIFT
+- 全社GL/連結会計
+- 全社Risk/自己資本規制System
+- CRM/営業提案System
+- 人事/給与等の非証券基幹System
 
-外側のシステムとの業務契約は `CS01 外部接続` を経由して各Authorityサブシステムへ接続する。
+外側との業務契約は `CS01 外部接続` を経由し、Business Authorityは各SSが持つ。
 
 ---
 
@@ -91,8 +97,8 @@ flowchart LR
 flowchart TB
 
   subgraph L0[Channel / External]
-    CH[顧客・営業店・ネット・アプリ・IFA]
-    EX[取引所 / PTS / JSCC / JASDEC / 銀行 / 発行体 / 税務・当局 / 海外Custody / 情報Vendor]
+    CH[顧客・営業店・Web/App・IFA]
+    EX[取引所 / PTS / JSCC / JASDEC / 銀行 / 発行体 / 税務・当局 / 海外Custody / Vendor]
   end
 
   subgraph L1[Customer & Reference]
@@ -104,6 +110,7 @@ flowchart TB
     B2[SS06 市場・営業日]
     B3[SS07 時価・為替・基準価額]
     B4[SS08 制度・料率・Parameter]
+    B5[SS41 取引先・決済条件/SSI]
   end
 
   subgraph L2[Trading & Risk]
@@ -124,11 +131,12 @@ flowchart TB
     D5[SS20 評価・損益]
   end
 
-  subgraph L4[Clearing & Settlement]
+  subgraph L4[Clearing / Settlement / Matching]
     E1[SS21 清算]
     E2[SS22 受渡・決済]
     E3[SS23 保振加入者・振替口座]
-    E4[SS24 照合・例外・Fail]
+    E4[SS24 残高/資金照合・例外・Fail]
+    E5[SS40 約定照合・決済照合]
   end
 
   subgraph L5[Corporate Action & Tax]
@@ -153,6 +161,7 @@ flowchart TB
     H7[SS37 情報系・営業日報・経営情報]
     H8[SS38 事務Workflow・承認]
     H9[SS39 資金繰り・決済資金]
+    H10[SS42 交付書面・目論見書・同意]
   end
 
   subgraph L8[Common Services]
@@ -166,10 +175,14 @@ flowchart TB
 
   CH --> L1
   L1 --> L2
+  L1 --> L7
+  L7 --> L2
   L2 --> L3
+  L2 --> L4
   L3 --> L4
   L3 --> L5
   L4 --> L5
+  L6 --> L2
   L6 --> L3
   L6 --> L4
   L5 --> L7
@@ -197,15 +210,17 @@ flowchart TB
 
 | Domain | Subsystems | 主な責務 |
 |---|---|---|
-| 顧客・口座・営業 | SS01-SS04 | 誰が、どの口座・契約・チャネルで取引できるか |
-| 基準情報 | SS05-SS08 | 何を、いつ、どの制度/Rateで処理するか |
+| 顧客・口座・営業 | SS01-SS04 | 誰が、どの口座・契約・Channelで取引できるか |
+| 基準情報 | SS05-SS08, SS41 | 何を、いつ、どの制度/Rate/Counterparty/SSIで処理するか |
 | 取引・Risk | SS09-SS15 | 注文から約定、余力、建玉、担保、手数料、与信 |
 | 顧客勘定・資産 | SS16-SS20 | 顧客の債権債務、金銭、証券、移管、評価損益 |
-| 清算・決済 | SS21-SS24 | 約定後の清算、受渡、保振口座、照合/Fail |
+| 清算・決済・照合 | SS21-SS24, SS40 | 清算、受渡、保振、約定/決済Matching、Reconciliation/Fail |
 | 権利・税務 | SS25-SS28 | Corporate Action、譲渡益税、配当税、NISA |
 | 外国証券 | SS29-SS30 | 海外市場/Custody固有処理、多通貨/為替 |
-| 会計・帳票・統制 | SS31-SS39 | 会計、帳票、法定報告、審査、AML、分別、MIS、事務、資金繰り |
+| 会計・帳票・統制 | SS31-SS39, SS42 | 会計、帳票、法定報告、交付書面、審査、AML、分別、MIS、事務、資金繰り |
 | 共通 | CS01-CS06 | 接続、Batch、権限、監査、Recovery、内部Data連携 |
+
+**v0.4論理サブシステム数: 42業務 + 6共通 = 48**
 
 ---
 
@@ -216,6 +231,7 @@ flowchart TB
 ```mermaid
 sequenceDiagram
   participant C as Channel
+  participant DOC as SS42 交付書面/同意
   participant O as SS09 注文約定
   participant BP as SS10 余力
   participant CMP as SS34 Compliance
@@ -228,6 +244,8 @@ sequenceDiagram
   participant ACC as SS31 会計
   participant R as SS32 帳票
 
+  C->>DOC: 必要書面/同意状態確認
+  DOC-->>C: 取引前要件充足
   C->>O: 買注文
   O->>BP: 買付余力確認/拘束
   O->>CMP: 取引可否Check
@@ -244,35 +262,53 @@ sequenceDiagram
 
 ### 6.2 国内株式 現物売却
 
-売却では SS18 の売却可能数量、SS10 の拘束、SS26 の取得価額/譲渡損益、SS17 の受渡金、SS31 の仕訳、SS32 の取引報告・税表示が追加の中心になる。
+売却では SS18 の売却可能数量、SS10 の拘束、SS26 の取得価額/譲渡損益、SS17 の受渡金、SS31 の仕訳、SS32 の取引報告・税表示が中心となる。
 
 ### 6.3 信用取引
 
-信用取引は独立サブシステムではない。主に以下を横断する。
+信用取引は独立サブシステムではない。
 
-`SS09 注文約定 → SS10 余力 → SS12 建玉 → SS13 担保保証金 → SS15 与信 → SS16 顧客勘定 → SS18 残高 → SS21/22 清算決済 → SS25 権利 → SS26 税 → SS31 会計 → SS32 帳票`
+`SS09 → SS10 → SS12 → SS13 → SS15 → SS16/17/18 → SS21/22 → SS25 → SS26 → SS31 → SS32`
+
+### 6.4 機関投資家取引/決済照合
+
+```mermaid
+flowchart LR
+  T[SS09 約定] --> M1[SS40 約定照合]
+  M1 --> SSI[SS41 SSI/決済条件]
+  SSI --> M2[SS40 決済照合]
+  M2 --> S[SS22 決済]
+  S --> R[SS24 Reconciliation/Fail]
+```
+
+JASDEC決済照合を利用しない取引ではSS40を経由しない。
 
 ---
 
 ## 7. 業務Authority原則
 
-同一情報を複数システムで正本化しない。
+同一情報を複数Systemで正本化しない。
 
 例:
 
-- 顧客属性の正本: SS01
-- 口座状態の正本: SS02
-- 銘柄属性の正本: SS05
-- 注文/約定状態の正本: SS09
-- 建玉の正本: SS12
-- 顧客債権債務の正本: SS16
-- 金銭残高の正本: SS17
-- 証券残高の正本: SS18
-- 清算債権債務の正本: SS21
-- 決済状態の正本: SS22
-- 権利Eventの正本: SS25
-- 特定口座損益/税の正本: SS26
-- 会計仕訳の正本: SS31
+- 顧客属性: SS01
+- 口座状態: SS02
+- 銘柄属性: SS05
+- Counterparty/SSI: SS41
+- 注文/約定状態: SS09
+- 建玉: SS12
+- 顧客債権債務: SS16
+- 金銭残高: SS17
+- 証券残高: SS18
+- 清算債権債務: SS21
+- 決済状態: SS22
+- Matching状態: SS40
+- Reconciliation Break/Fail: SS24
+- 権利Event: SS25
+- 特定口座損益/税: SS26
+- 会計仕訳: SS31
+- 取引後Customer Report instance: SS32
+- 取引前文書Version/交付証跡/同意: SS42
 
 詳細は `DATA_AUTHORITY_MAP.md`。
 
@@ -280,26 +316,29 @@ sequenceDiagram
 
 ## 8. Interface原則
 
-内部I/Fは画面やDB共有ではなく、原則として**Business Object / Business Event**で定義する。
+内部I/Fは画面やDB共有ではなく、原則としてBusiness Object / Business Eventで定義する。
 
 主要Object/Event例:
 
 - CustomerChanged
 - AccountOpened / AccountStatusChanged
 - InstrumentChanged
+- CounterpartyChanged / SSIChanged
+- DisclosureRequired / DocumentDelivered / ConsentGranted / ConsentWithdrawn
 - OrderAccepted / OrderRejected / ExecutionCreated / ExecutionCorrected
 - BuyingPowerReserved / Released
 - PositionOpened / PositionClosed
 - CashReceivableCreated / CashPayableCreated
-- SecurityReceivableCreated / SecurityPayableCreated
 - ClearingObligationCreated
+- TradeMatchUpdated / SettlementMatchUpdated
 - SettlementInstructionCreated / SettlementCompleted / SettlementFailed
+- ReconciliationBreakOpened / Resolved
 - CorporateActionAnnounced / EntitlementFixed / CorporateActionPaid
 - TaxAcquisitionCreated / TaxDisposalCreated / TaxWithheld / TaxRefunded
 - JournalRequested / JournalPosted
 - CustomerReportRequested / Issued
 
-各Eventは最低限 `event_id`, `event_type`, `business_date`, `source_system`, `source_object_id`, `version`, `correction_of` を持つ設計とする。
+各Eventは最低限 `event_id`, `event_type`, `business_date`, `source_system`, `source_object_id`, `version`, `correction_of` を持つ。
 
 ---
 
@@ -308,18 +347,20 @@ sequenceDiagram
 ### Online中心
 
 - 顧客/口座照会
+- 必要交付書面/同意確認
 - 注文受付/注文可否
 - 余力
 - 売却可能数量
 - 市場発注/約定受信
-- 一部のCompliance Check
+- 一部Compliance Check
 - 入出金受付
+- 一部Matching/Settlement Status更新
 
 ### Batch/締め中心
 
 - 日次残高確定
 - 清算/決済予定作成
-- 日次/週次/月次照合
+- 残高/資金Reconciliation
 - 権利基準日処理
 - 税日次/年次確定
 - 会計締め
@@ -327,13 +368,23 @@ sequenceDiagram
 - 年間取引報告書
 - NISA年次処理
 
-`CS02 業務日付・Batch統制` は業務計算を保有せず、各Authorityサブシステムの処理順序と締めを統制する。
+`CS02` は業務計算を保有せず、各Authority SSの処理順序と締めを統制する。
 
 ---
 
-## 10. 共通非機能原則
+## 10. Scope Tier
 
-証券基幹では業務仕様と同時に以下を全サブシステム共通前提とする。
+詳細は `SCOPE_TIER_MODEL.md`。
+
+- **Tier A Core**: 一般的な日本証券基幹で原則必須
+- **Tier B Conditional**: 取扱業務/商品により必要
+- **Tier C Adjacent**: 証券基幹外の周辺SystemとしてI/F管理
+
+これは重要度ではなく責務境界の分類である。
+
+---
+
+## 11. 共通非機能原則
 
 - Idempotency / Duplicate防止
 - 訂正・取消のLineage
@@ -341,35 +392,57 @@ sequenceDiagram
 - 再実行可能性
 - Audit Trail
 - Maker/Checker
-- 個人情報/マイナンバー等のAccess制御
-- 外部IFのACK/NACK/再送/Sequence
+- 個人情報/マイナンバー等Access制御
+- 外部I/FのACK/NACK/再送/Sequence
 - 日次締め後の遡及訂正
 - BCP/DR
 - 大量Batch時の処理順序と再開点
+- 文書/Rule/SSIのeffective date/version管理
 
 ---
 
-## 11. 総体設計の完成条件
+## 12. Architecture Gap Review結果
+
+v0.3をGap Reviewし、以下を追加/分離した。
+
+1. SS40 約定照合・決済照合管理
+2. SS41 取引先・決済条件（SSI）管理
+3. SS42 交付書面・目論見書・同意管理
+4. SS24を残高/資金Reconciliation・Exception/Failへ限定
+
+詳細: `ARCHITECTURE_GAP_REVIEW_V0_3.md`
+
+---
+
+## 13. 総体設計の完成条件
 
 個別サブシステム詳細へ進む前に、以下をArchitecture Reviewで確定する。
 
-- [ ] 39業務サブシステム + 6共通系の過不足
-- [ ] 各サブシステムの責務境界
-- [ ] Internal Relation Map
-- [ ] External Relation Map
-- [ ] Data Authority Map
-- [ ] 主要End-to-End Flow
-- [ ] 取引種別Catalog
-- [ ] 商品Catalog
-- [ ] サブシステム × 取引 × 商品のCoverage方法
+- [x] Subsystem / Transaction / Product 3軸分離
+- [x] v0.3一次Gap Review
+- [ ] 42業務SS + 6共通SSの最終過不足Review
+- [ ] 各サブシステムの責務境界最終Review
+- [ ] Internal Relation Map v0.4
+- [ ] External Relation Map v0.4
+- [ ] Data Authority Map v0.4
+- [ ] 主要End-to-End Flow v0.4
+- [ ] Scope Tier最終確定
+- [ ] Coverage Matrixで重大Gapなし
+- [ ] ID/名称をv1.0でFreeze
+
+Architecture Gate通過までは新規詳細Skillを作成しない。
 
 ---
 
-## 12. 公開参照
+## 14. 公開参照
 
 - NRI THE STAR: https://www.nri.com/jp/service/solution/the_star.html
 - NRI I-STAR/CORE: https://www.nri.com/jp/service/solution/i_star_core.html
 - NRI I-STAR/GV: https://www.nri.com/jp/service/solution/i_star_gv.html
-- JASDEC: https://www.jasdec.com/rule/
+- NRI サービス一覧（I-STAR/MX/SC等）: https://www.nri.com/jp/service/solution/index.html
+- JASDEC 決済照合: https://faq.jasdec.com/faq/show/854
+- JASDEC SSI: https://faq.jasdec.com/faq/show/862
+- 日本証券業協会: https://www.jsda.or.jp/shijyo/seido/jishukisei/
+- 金融庁 総合的監督指針: https://www.fsa.go.jp/common/law/guide/kinyushohin/
 
 上記は機能Coverageと外部制度の参考とし、非公開内部構造の根拠には使用しない。
