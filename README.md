@@ -4,41 +4,58 @@
 
 > **重要**: 本リポジトリは公開一次情報と独自整理に基づく「日本証券基幹システム参照モデル」です。NRI THE STAR の非公開内部仕様・内部サブシステム名称を再現するものではありません。
 
+## v0.2 分類原則
+
+本リポジトリでは、以下を混在させない。
+
+1. **サブシステム** = 業務機能・責務（例: 顧客属性、注文・約定、余力、譲渡益税、権利、会計）
+2. **取引種別** = 何をするか（例: 現物取引、信用取引）
+3. **商品** = 何を取引するか（例: 株式、債券、投資信託）
+
+基本的な要件整理単位は:
+
+`サブシステム × 取引種別 × 商品`
+
+例: `注文・約定管理 × 信用取引 × 国内株式`
+
+分類Authority:
+- `docs/01-architecture/CLASSIFICATION_MODEL.md`
+- `docs/01-architecture/SUBSYSTEM_CATALOG.md`
+- `docs/01-architecture/TRANSACTION_CATALOG.md`
+- `docs/01-architecture/PRODUCT_CATALOG.md`
+
 ## 目的
 
-1. 日本の証券基幹システムに必要な業務領域・サブシステムを漏れなく定義する。
+1. 日本の証券基幹システムに必要な業務サブシステムを漏れなく定義する。
 2. 各サブシステムの業務ルール、状態、計算、例外、対内/対外インターフェースを Skill 化する。
 3. INPUT / OUTPUT を項目レベルで定義し、帳票についてはレイアウト、項目、出力契機、提出/交付先、法的根拠まで追跡可能にする。
-4. 各 Know-how に一次情報の出典と適用時点を付与する。
-5. 将来、ChatGPT / Codex / Claude 等が設計・開発・テストで直接利用できる知識基盤にする。
+4. 取引種別と商品は別軸で管理し、各サブシステムへの影響をマトリクス化する。
+5. 各 Know-how に一次情報の出典と適用時点を付与する。
+6. 将来、ChatGPT / Codex / Claude 等が設計・開発・テストで直接利用できる知識基盤にする。
 
 ## ディレクトリ
 
 ```text
 docs/
   00-governance/       # 出典、記述、変更管理ルール
-  01-architecture/     # 全体システム構成、関係、I/O標準
+  01-architecture/     # 分類、全体システム構成、関係、I/O標準
 skills/
-  _template/           # Skill標準テンプレート
-  S01-.../             # サブシステム別Skill
-  ...
-  S19-capital-gains-tax/ # 譲渡益税の詳細サンプル
+  subsystems/          # SSxx 業務サブシステムSkill
+  common/              # CSxx 共通系サブシステムSkill
 ```
+
+旧`skills/Sxx-*`はv0.1の分類混在があるため移行対象であり、v0.2のAuthorityではありません。
 
 ## 参照モデルの根拠
 
-NRI公開情報では THE STAR は証券会社の総合バックオフィス/勘定系であり、口座開設から注文・決済、情報系、コンプライアンス、営業日報、財務会計までを対象としています。I-STAR/GV の公開機能分類（マスター、取引、精算・決済、残高、コーポレートアクション、会計、外部接続等）も、バックオフィス参照モデルの補助資料として使用します。
+NRI公開情報では THE STAR は証券会社の総合バックオフィス/勘定系であり、口座開設から注文・決済、情報系、コンプライアンス、営業日報、財務会計までを対象としています。
+
+I-STAR/COREの公開説明では、**約定管理、決済管理、証券残高管理、資金残高管理、顧客勘定、会計、対外報告**を機能として列挙し、その次に**現物・先物・オプション、外国証券、債券、貸借**等を取扱対象として別記しています。この区分を本プロジェクトの「サブシステム / 取引 / 商品」分離の重要な公開根拠とします。
 
 - NRI THE STAR: https://www.nri.com/jp/service/solution/the_star.html
+- NRI I-STAR/CORE: https://www.nri.com/jp/service/solution/i_star_core.html
 - NRI I-STAR/GV: https://www.nri.com/jp/service/solution/i_star_gv.html
-- NRI I-STAR/GX: https://www.nri.com/jp/service/solution/i_star_gx.html
-
-## Phase
-
-- **Phase 1**: 全体参照モデル、サブシステムカタログ、関係図、Skill標準
-- **Phase 2**: 国内株式中核（注文約定、余力、残高、受渡、権利、譲渡益税、NISA、対客帳票）
-- **Phase 3**: 投信、債券、信用、外国証券、外貨、会計、法定報告
-- **Phase 4**: 実案件の設計書・QA・障害票・テスト資産から内部 Know-how を追加
+- JASDEC: https://www.jasdec.com/rule/
 
 ## 原則
 
